@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Гавань · ИИ-консьерж для отелей</title>
+<meta name="description" content="Гость пишет в Telegram, MAX или веб-чат — ИИ-консьерж отвечает за секунды.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ===== НАСТРОЙКИ: меняйте цвета и скорость здесь ===== */
+:root{
+  --hb-navy:#0a2540; --hb-teal:#00c2b2; --hb-accent:#ff7a59; /* акцент: коралл (для золота: #f5b942) */
+  --hb-bg:#f4f9fb; --hb-text:#0a2540; --hb-muted:#5b7186;
+  --hb-glass:rgba(255,255,255,.65); --hb-border:rgba(10,37,64,.1);
+  --hb-shadow:0 10px 40px rgba(10,37,64,.12);
+  --hb-speed:.7s;            /* скорость анимаций появления */
+  --hb-aurora-speed:22s;     /* скорость волн фона */
+  --hb-r:22px;
+}
+[data-theme="dark"]{
+  --hb-bg:#06182b; --hb-text:#eaf6fa; --hb-muted:#8fa9bd;
+  --hb-glass:rgba(255,255,255,.06); --hb-border:rgba(255,255,255,.12);
+  --hb-shadow:0 10px 40px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font-family:Manrope,Inter,system-ui,sans-serif;background:var(--hb-bg);color:var(--hb-text);line-height:1.6;overflow-x:hidden;transition:background .4s,color .4s}
+h1,h2,h3{font-family:'Space Grotesk',Manrope,sans-serif;line-height:1.1;letter-spacing:-.02em}
+a{color:inherit;text-decoration:none}
+.hb-wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+section{padding:96px 0;position:relative}
+.hb-eyebrow{color:var(--hb-teal);font-weight:800;text-transform:uppercase;letter-spacing:.14em;font-size:.78rem}
+.hb-h2{font-size:clamp(2rem,4.5vw,3.2rem);margin:10px 0 40px}
+.hb-glass{background:var(--hb-glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--hb-border);border-radius:var(--hb-r);box-shadow:var(--hb-shadow);transition:transform .35s,box-shadow .35s}
+.hb-glass:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,194,178,.2)}
+
+/* Кнопки */
+.hb-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 26px;border:0;border-radius:999px;font:700 1rem Manrope,sans-serif;cursor:pointer;color:#fff;background:linear-gradient(120deg,var(--hb-teal),#0a86c9,var(--hb-teal));background-size:200% 100%;transition:background-position .5s,transform .25s,box-shadow .25s;box-shadow:0 8px 24px rgba(0,194,178,.35)}
+.hb-btn:hover{background-position:100% 0;transform:translateY(-3px) scale(1.03);box-shadow:0 14px 32px rgba(0,194,178,.5)}
+.hb-btn:active{transform:scale(.97)}
+.hb-btn--ghost{background:transparent;color:var(--hb-text);border:1.5px solid var(--hb-border);box-shadow:none}
+.hb-btn--ghost:hover{border-color:var(--hb-teal);color:var(--hb-teal);box-shadow:none}
+
+/* Шапка */
+.hb-nav{position:fixed;inset:0 0 auto;z-index:50;padding:12px 0;transition:background .3s,box-shadow .3s}
+.hb-nav.is-scrolled{background:var(--hb-glass);backdrop-filter:blur(16px);box-shadow:0 2px 20px rgba(0,0,0,.08)}
+.hb-nav .hb-wrap{display:flex;align-items:center;gap:26px}
+.hb-logo{font:700 1.4rem 'Space Grotesk';display:flex;align-items:center;gap:8px;margin-right:auto}
+.hb-nav a.hb-link{font-weight:600;font-size:.95rem;color:var(--hb-muted);transition:color .2s}
+.hb-nav a.hb-link:hover{color:var(--hb-teal)}
+.hb-theme{width:42px;height:42px;border-radius:50%;border:1px solid var(--hb-border);background:var(--hb-glass);cursor:pointer;font-size:1.1rem;transition:transform .4s}
+.hb-theme:hover{transform:rotate(25deg) scale(1.1)}
+
+/* HERO */
+.hb-hero{min-height:100vh;display:flex;align-items:center;padding:120px 0 70px;overflow:hidden;color:#fff;background:#06182b}
+.hb-aurora{position:absolute;inset:-20%;filter:blur(70px);opacity:.85}
+.hb-blob{position:absolute;border-radius:50%;animation:hb-float var(--hb-aurora-speed) ease-in-out infinite alternate;transition:transform .3s ease-out}
+.hb-blob:nth-child(1){width:55vw;height:55vw;left:-5%;top:-10%;background:radial-gradient(circle,#00c2b2,transparent 65%)}
+.hb-blob:nth-child(2){width:50vw;height:50vw;right:-8%;top:10%;background:radial-gradient(circle,#0a86c9,transparent 65%);animation-delay:-7s}
+.hb-blob:nth-child(3){width:40vw;height:40vw;left:30%;bottom:-15%;background:radial-gradient(circle,#ff7a59aa,transparent 65%);animation-delay:-13s}
+@keyframes hb-float{to{transform:translate(8vw,6vh) scale(1.2) rotate(40deg)}}
+.hb-hero .hb-wrap{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.hb-hero h1{font-size:clamp(2.6rem,6.2vw,5.2rem);font-weight:700}
+.hb-hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--hb-teal),#9ff7ee,var(--hb-accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hb-word{display:inline-block;opacity:0;filter:blur(14px);transform:translateY(40px);animation:hb-in .9s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(var(--i)*.14s + .2s)}
+@keyframes hb-in{to{opacity:1;filter:blur(0);transform:none}}
+.hb-sub{margin:22px 0 28px;font-size:1.15rem;max-width:520px;color:#cfe6ee;opacity:0;animation:hb-in 1s 1s forwards}
+.hb-cta{display:flex;gap:14px;flex-wrap:wrap;opacity:0;animation:hb-in 1s 1.2s forwards}
+.hb-hero .hb-btn--ghost{color:#fff;border-color:rgba(255,255,255,.35)}
+.hb-pill{display:inline-block;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);font-size:.85rem;font-weight:700;margin-bottom:18px;opacity:0;animation:hb-in .8s .1s forwards}
+
+/* Чат */
+.hb-chat{color:var(--hb-text);animation:hb-breathe 6s ease-in-out infinite;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.22);color:#fff;max-width:440px;margin-left:auto;width:100%;overflow:hidden}
+@keyframes hb-breathe{50%{transform:translateY(-8px)}}
+.hb-chat:hover{transform:none}
+.hb-tabs{display:flex;gap:6px;padding:12px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.15)}
+.hb-tab{flex:1;padding:8px 6px;border-radius:12px;border:0;background:transparent;color:#cfe6ee;font:700 .8rem Manrope;cursor:pointer;white-space:nowrap;transition:.25s}
+.hb-tab:hover{background:rgba(255,255,255,.12)}
+.hb-tab.is-active{background:var(--hb-teal);color:#04222e}
+.hb-chat-head{padding:12px 18px;font-weight:700;display:flex;align-items:center;gap:8px}
+.hb-chat-head i{width:9px;height:9px;border-radius:50%;background:#3ef0b5;box-shadow:0 0 0 0 #3ef0b5;animation:hb-pulse 2s infinite}
+@keyframes hb-pulse{70%{box-shadow:0 0 0 10px transparent}}
+.hb-msgs{height:290px;overflow-y:auto;padding:6px 16px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none}
+.hb-msg{max-width:84%;padding:10px 14px;border-radius:18px;font-size:.93rem;animation:hb-pop .4s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes hb-pop{from{opacity:0;transform:translateY(12px) scale(.9)}}
+.hb-msg--bot{background:rgba(255,255,255,.16);border-bottom-left-radius:4px;align-self:flex-start}
+.hb-msg--me{background:linear-gradient(120deg,var(--hb-teal),#0a86c9);border-bottom-right-radius:4px;align-self:flex-end}
+.hb-typing span{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:#cfe6ee;animation:hb-dot 1s infinite}
+.hb-typing span:nth-child(2){animation-delay:.15s}.hb-typing span:nth-child(3){animation-delay:.3s}
+@keyframes hb-dot{50%{transform:translateY(-5px);opacity:.4}}
+.hb-quick{display:flex;gap:8px;padding:10px 14px;flex-wrap:wrap}
+.hb-quick button{padding:7px 12px;border-radius:99px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font:600 .8rem Manrope;cursor:pointer;transition:.25s}
+.hb-quick button:hover{background:var(--hb-teal);border-color:var(--hb-teal);color:#04222e;transform:translateY(-2px)}
+
+/* Карточки возможностей */
+.hb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+.hb-card{padding:28px}
+.hb-ico{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:1.6rem;margin-bottom:16px;background:linear-gradient(135deg,rgba(0,194,178,.2),rgba(10,134,201,.2));transition:transform .4s}
+.hb-card:hover .hb-ico{transform:rotate(-8deg) scale(1.15)}
+.hb-card h3{font-size:1.25rem;margin-bottom:8px}
+.hb-card p{color:var(--hb-muted);font-size:.97rem}
+
+/* Таймлайн */
+.hb-tl{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:22px;padding-top:34px}
+.hb-tl-line{position:absolute;top:10px;left:0;right:0;height:4px;border-radius:4px;background:var(--hb-border)}
+.hb-tl-fill{height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,var(--hb-teal),var(--hb-accent));transition:width 1.6s cubic-bezier(.3,.7,.2,1)}
+.hb-step{padding:24px;position:relative}
+.hb-step::before{content:"";position:absolute;top:-33px;left:24px;width:20px;height:20px;border-radius:50%;background:var(--hb-bg);border:4px solid var(--hb-border);transition:.5s}
+.hb-step.is-on::before{border-color:var(--hb-teal);box-shadow:0 0 0 6px rgba(0,194,178,.2)}
+.hb-step small{color:var(--hb-accent);font-weight:800}
+.hb-step h3{margin:6px 0}.hb-step p{color:var(--hb-muted);font-size:.95rem}
+
+/* Админка */
+.hb-admin-wrap{display:grid;grid-template-columns:1fr 1.2fr;gap:44px;align-items:center}
+.hb-admin-wrap p{color:var(--hb-muted)}
+.hb-admin{padding:22px}
+.hb-admin h4{font:700 1rem Manrope;margin-bottom:14px;display:flex;justify-content:space-between}
+.hb-req{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--hb-border);animation:hb-pop .4s}
+.hb-req b{color:var(--hb-teal)}.hb-req span{flex:1}
+.hb-st{border:0;padding:6px 14px;border-radius:99px;font:700 .8rem Manrope;cursor:pointer;color:#fff;transition:.25s}
+.hb-st:hover{transform:scale(1.08)}
+.hb-st[data-s="new"]{background:var(--hb-accent)}.hb-st[data-s="work"]{background:#e0a100}.hb-st[data-s="done"]{background:#12a97a}
+.hb-add{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.hb-add input{flex:1;min-width:140px}
+
+/* Метрики */
+.hb-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px;text-align:center}
+.hb-metric{padding:36px 20px}
+.hb-num{font:700 clamp(3rem,6vw,4.4rem) 'Space Grotesk';background:linear-gradient(120deg,var(--hb-teal),#0a86c9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hb-metric p{color:var(--hb-muted)}
+
+/* Форма */
+.hb-form{max-width:640px;margin:0 auto;padding:34px;display:grid;gap:14px}
+input,textarea{width:100%;padding:14px 16px;border-radius:14px;border:1.5px solid var(--hb-border);background:var(--hb-glass);color:var(--hb-text);font:500 1rem Manrope;transition:.25s}
+input:focus,textarea:focus{outline:0;border-color:var(--hb-teal);box-shadow:0 0 0 4px rgba(0,194,178,.18)}
+.is-bad{border-color:#e5484d!important}
+.hb-err{color:#e5484d;font-size:.82rem;min-height:1em;margin-top:-8px}
+.hb-check{display:flex;gap:10px;align-items:flex-start;font-size:.9rem;color:var(--hb-muted)}
+.hb-check input{width:20px;margin-top:4px;accent-color:var(--hb-teal)}
+.hb-thanks{display:none;text-align:center;padding:40px 10px}
+.hb-thanks .hb-ico{margin:0 auto 14px;font-size:2rem}
+
+footer{padding:50px 0;border-top:1px solid var(--hb-border);color:var(--hb-muted)}
+footer .hb-wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
+footer a:hover{color:var(--hb-teal)}
+
+/* Появление при скролле */
+.hb-rev{opacity:0;transform:translateY(40px);filter:blur(6px);transition:opacity var(--hb-speed),transform var(--hb-speed),filter var(--hb-speed);transition-delay:calc(var(--d,0)*.09s)}
+.hb-rev.is-in{opacity:1;transform:none;filter:none}
+
+@media(max-width:900px){
+  .hb-hero .hb-wrap,.hb-admin-wrap{grid-template-columns:1fr}
+  .hb-chat{margin:0 auto}
+  .hb-tl{grid-template-columns:1fr}.hb-tl-line{display:none}.hb-step::before{display:none}
+  .hb-nav a.hb-link{display:none}
+  section{padding:70px 0}
+}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body id="top">
+
+<nav class="hb-nav" id="hbNav"><div class="hb-wrap">
+  <a class="hb-logo" href="#top">⚓ Гавань</a>
+  <a class="hb-link" href="#features">Возможности</a><a class="hb-link" href="#how">Запуск</a>
+  <a class="hb-link" href="#requests">Заявки</a><a class="hb-link" href="#security">Безопасность</a>
+  <button class="hb-theme" id="hbTheme" aria-label="Сменить тему">🌙</button>
+  <a class="hb-btn" href="#pilot" style="padding:10px 20px">Запросить демо</a>
+</div></nav>
+
+<!-- ===== HERO ===== -->
+<header class="hb-hero"><div class="hb-aurora" id="hbAurora"><div class="hb-blob"></div><div class="hb-blob"></div><div class="hb-blob"></div></div>
+<div class="hb-wrap">
+  <div>
+    <span class="hb-pill">ИИ-консьерж для отелей</span>
+    <!-- Заголовок: каждое слово — отдельный span для анимации -->
+    <h1><span class="hb-word" style="--i:0">Сервис,</span> <span class="hb-word" style="--i:1">который</span> <span class="hb-word" style="--i:2">отвечает</span> <em><span class="hb-word" style="--i:3">за</span> <span class="hb-word" style="--i:4">секунды</span></em></h1>
+    <p class="hb-sub">Гость пишет в Telegram, MAX или веб-чат — или сканирует QR в номере. Приложение не нужно, оборудование в номерах тоже.</p>
+    <div class="hb-cta"><a class="hb-btn" href="#pilot">Запустить пилот →</a><a class="hb-btn hb-btn--ghost" href="#chat" id="hbTry">Попробовать чат</a></div>
+  </div>
+  <div class="hb-glass hb-chat" id="chat">
+    <div class="hb-tabs" id="hbTabs"></div>
+    <div class="hb-chat-head"><i></i><span id="hbChatTitle">Гавань · Консьерж</span><small style="margin-left:auto;font-weight:500;opacity:.7">на связи</small></div>
+    <div class="hb-msgs" id="hbMsgs"></div>
+    <div class="hb-quick" id="hbQuick"></div>
+  </div>
+</div></header>
+
+<!-- ===== ВОЗМОЖНОСТИ ===== -->
+<section id="features"><div class="hb-wrap">
+  <div class="hb-rev"><span class="hb-eyebrow">Возможности</span><h2 class="hb-h2">Что умеет помощник</h2></div>
+  <div class="hb-grid" id="hbFeat"></div>
+</div></section>
+
+<!-- ===== КАК ЭТО РАБОТАЕТ ===== -->
+<section id="how"><div class="hb-wrap">
+  <div class="hb-rev"><span class="hb-eyebrow">Как это работает</span><h2 class="hb-h2">От аудита до масштаба</h2></div>
+  <div class="hb-tl" id="hbTl"><div class="hb-tl-line"><div class="hb-tl-fill" id="hbFill"></div></div>
+    <div class="hb-glass hb-step hb-rev"><small>1–2 мес</small><h3>Аудит</h3><p>Разбираем вопросы гостей и собираем «Книгу гостя».</p></div>
+    <div class="hb-glass hb-step hb-rev" style="--d:1"><small>2–3 мес</small><h3>Прототип</h3><p>Рабочий бот в Telegram и MAX на данных вашего отеля.</p></div>
+    <div class="hb-glass hb-step hb-rev" style="--d:2"><small>3–4 мес</small><h3>Интеграции</h3><p>PMS, ресторан, система заявок, эскалации на сотрудников.</p></div>
+    <div class="hb-glass hb-step hb-rev" style="--d:3"><small>с 5 мес</small><h3>Пилот и масштаб</h3><p>Запуск для гостей, замеры метрик, расширение на сеть.</p></div>
+  </div>
+</div></section>
+
+<!-- ===== АДМИНКА ===== -->
+<section id="requests"><div class="hb-wrap hb-admin-wrap">
+  <div class="hb-rev"><span class="hb-eyebrow">Для администратора</span><h2 class="hb-h2" style="margin-bottom:16px">Каждый запрос — заявка со статусом</h2>
+    <p>Напишите в чат «нужны полотенца», «уборка» или «столик» — заявка появится здесь. Нажмите на статус, чтобы сменить его.</p></div>
+  <div class="hb-glass hb-admin hb-rev" style="--d:2">
+    <h4>Панель администратора <span id="hbCount" style="color:var(--hb-muted);font-weight:500"></span></h4>
+    <div id="hbReqs"></div>
+    <form class="hb-add" id="hbAdd"><input id="hbAddIn" placeholder="Новая заявка, напр. «Полотенца, №305»" maxlength="60"><button class="hb-btn" style="padding:12px 20px">Создать заявку через чат</button></form>
+  </div>
+</div></section>
+
+<!-- ===== МЕТРИКИ =====  data-to — итоговое число (замените на свои реальные цифры) -->
+<section style="padding:40px 0"><div class="hb-wrap hb-metrics">
+  <div class="hb-glass hb-metric hb-rev"><div class="hb-num"><span data-to="70">0</span>%</div><p>типовых вопросов закрывается без человека</p></div>
+  <div class="hb-glass hb-metric hb-rev" style="--d:1"><div class="hb-num">−<span data-to="40">0</span>%</div><p>обращений на ресепшен</p></div>
+  <div class="hb-glass hb-metric hb-rev" style="--d:2"><div class="hb-num">24/7</div><p>ответ за секунды, в любое время суток</p></div>
+</div></section>
+
+<!-- ===== БЕЗОПАСНОСТЬ ===== -->
+<section id="security"><div class="hb-wrap">
+  <div class="hb-rev"><span class="hb-eyebrow">Безопасность</span><h2 class="hb-h2">Данные гостей остаются в России</h2></div>
+  <div class="hb-grid" id="hbSec"></div>
+</div></section>
+
+<!-- ===== ФОРМА ===== -->
+<section id="pilot"><div class="hb-wrap">
+  <div class="hb-rev" style="text-align:center"><span class="hb-eyebrow">Пилот</span><h2 class="hb-h2">Запустим пилот в вашем отеле</h2></div>
+  <div class="hb-glass hb-form hb-rev" style="--d:1">
+    <form id="hbForm" novalidate style="display:grid;gap:14px">
+      <input name="name" placeholder="Имя"><div class="hb-err"></div>
+      <input name="hotel" placeholder="Отель"><div class="hb-err"></div>
+      <input name="contact" placeholder="Телефон или email"><div class="hb-err"></div>
+      <textarea name="msg" rows="3" placeholder="Комментарий"></textarea>
+      <label class="hb-check"><input type="checkbox" name="agree"> Согласен на обработку персональных данных (152-ФЗ)</label><div class="hb-err"></div>
+      <button class="hb-btn" style="justify-content:center">Отправить заявку</button>
+    </form>
+    <div class="hb-thanks" id="hbThanks"><div class="hb-ico">✅</div><h3>Спасибо!</h3><p style="color:var(--hb-muted);margin-top:8px">Мы свяжемся с вами в течение рабочего дня и расскажем о запуске.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="hb-wrap">
+  <div><a class="hb-logo" href="#top">⚓ Гавань</a><p>ИИ-консьерж для отелей. Ответ за секунды, 24/7.</p></div>
+  <div><a href="mailto:hello@gavan.example">hello@gavan.example</a><br><a href="tel:+78000000000">+7 (800) 000-00-00</a><br><a href="#pilot">Запросить демо</a></div>
+  <div><a href="#features">Возможности</a><br><a href="#security">Безопасность</a><br><a href="#">Политика конфиденциальности</a></div>
+</div></footer>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+/* ===== ТЕМА (сохраняется в localStorage) ===== */
+const root=document.documentElement, tbtn=$('#hbTheme');
+const setTheme=t=>{root.dataset.theme=t;tbtn.textContent=t==='dark'?'☀️':'🌙';try{localStorage.setItem('hb-theme',t)}catch(e){}};
+let saved;try{saved=localStorage.getItem('hb-theme')}catch(e){}
+setTheme(saved||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+tbtn.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark');
+
+/* Шапка + parallax от мыши */
+addEventListener('scroll',()=>$('#hbNav').classList.toggle('is-scrolled',scrollY>30),{passive:true});
+const blobs=$$('.hb-blob');
+addEventListener('mousemove',e=>{const x=e.clientX/innerWidth-.5,y=e.clientY/innerHeight-.5;
+  blobs.forEach((b,i)=>b.style.translate=`${x*(i+1)*-50}px ${y*(i+1)*-40}px`)});
+
+/* ===== ДАННЫЕ: карточки ===== */
+const feat=[['💬','Отвечает на вопросы','Заезд и выезд, питание, Wi-Fi, как добраться, куда сходить — строго по утверждённой «Книге гостя».'],
+['🧾','Принимает заявки','Полотенца, уборка, мелкий ремонт, трансфер — с номером комнаты и статусом выполнения.'],
+['🍽️','Помогает заказать','Столик в ресторане, СПА, экскурсии. Предлагает онлайн-регистрацию.'],
+['🌍','Говорит на языках гостя','Русский, английский и другие языки — в одном чате, без переключений.'],
+['🙋','Зовёт человека','Кнопка «Позвать человека»: сотрудник подключается и видит всю историю диалога.'],
+['⭐','Собирает отзывы','Оценки и аналитика для управляющего — что нравится гостям, а что стоит улучшить.']];
+$('#hbFeat').innerHTML=feat.map((f,i)=>`<div class="hb-glass hb-card hb-rev" style="--d:${i%3}"><div class="hb-ico">${f[0]}</div><h3>${f[1]}</h3><p>${f[2]}</p></div>`).join('');
+const sec=[['Хранение в РФ','GigaChat / YandexGPT через российское облако или открытая модель на серверах в РФ.'],
+['Соответствие 152-ФЗ','Процессы и документы выстроены по требованиям закона о персональных данных.'],
+['Согласие гостя','Обработка начинается только после явного согласия в чате.'],
+['Минимум данных','Собираем только то, что нужно для заявки: без лишних анкет.']];
+const shield='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00c2b2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>';
+$('#hbSec').innerHTML=sec.map((s,i)=>`<div class="hb-glass hb-card hb-rev" style="--d:${i%4}"><div class="hb-ico">${shield}</div><h3>${s[0]}</h3><p>${s[1]}</p></div>`).join('');
+
+/* ===== ЧАТ-ДЕМО: сценарии по каналам (меняйте тексты здесь) ===== */
+const channels={
+ 'Telegram':{title:'Гавань · Telegram',script:[['me','Здравствуйте! Во сколько завтрак?'],['bot','Доброе утро! 👋 Завтрак с 7:30 до 10:30, ресторан на 1 этаже.'],['me','Можно принести полотенца в 305?'],['bot','Конечно! Заявка №1043 создана, горничная будет через 10 минут. 🧺']]},
+ 'MAX':{title:'Гавань · MAX',script:[['me','Подскажите пароль от Wi-Fi'],['bot','Сеть Gavan_Guest, пароль — в приветственной карточке номера. Отправить QR?'],['me','Да, пожалуйста'],['bot','Готово ✅ Подключение займёт пару секунд.']]},
+ 'Веб-чат':{title:'Гавань · Веб-чат',script:[['me','Hello! What time is check-out?'],['bot','Hello! Check-out is until 12:00. Late check-out is available on request. 🕛'],['me','Спасибо! А по-русски можно?'],['bot','Конечно, отвечаю на языке гостя. Чем помочь?']]},
+ 'QR в номере':{title:'Гавань · QR в номере',script:[['bot','Вы отсканировали QR в номере 305. Приложение не нужно — просто напишите! ✨'],['me','Нужна уборка'],['bot','Заявка №1044 «Уборка номера 305» принята. Когда вам удобно?'],['me','После 14:00'],['bot','Записал. Статус заявки увидите здесь. 🧹']]}};
+const answers={'Забронировать столик':'Столик на сегодня, 20:00, на двоих — забронирован 🍷 Подтверждение пришлю за час.','Нужны полотенца':'Заявка создана, полотенца принесут в течение 10 минут. 🧺','Как добраться?':'От вокзала — 15 минут на такси или автобус №7. Построить маршрут? 🗺️','Позвать человека':'Подключаю администратора — он увидит всю историю диалога. 🙋'};
+const msgs=$('#hbMsgs'),tabs=$('#hbTabs');let run=0;
+Object.keys(channels).forEach((k,i)=>{const b=document.createElement('button');b.className='hb-tab'+(i?'':' is-active');b.textContent=k;b.onclick=()=>{$$('.hb-tab').forEach(t=>t.classList.remove('is-active'));b.classList.add('is-active');play(k)};tabs.appendChild(b)});
+$('#hbQuick').innerHTML=Object.keys(answers).map(q=>`<button>${q}</button>`).join('');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const add=(who,txt)=>{const d=document.createElement('div');d.className='hb-msg hb-msg--'+who;d.textContent=txt;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d};
+async function bot(txt,id){ // «печатает…» → ответ
+  const t=document.createElement('div');t.className='hb-msg hb-msg--bot hb-typing';t.innerHTML='<span></span><span></span><span></span>';msgs.appendChild(t);msgs.scrollTop=msgs.scrollHeight;
+  await wait(900);if(id!==undefined&&id!==run)return t.remove();t.remove();add('bot',txt)}
+async function play(k){const id=++run;msgs.innerHTML='';$('#hbChatTitle').textContent=channels[k].title;
+  for(const [w,t] of channels[k].script){if(id!==run)return;await wait(w==='me'?700:200);if(id!==run)return;
+    if(w==='me')add('me',t);else await bot(t,id)}}
+$('#hbQuick').onclick=async e=>{const q=e.target.textContent;if(e.target.tagName!=='BUTTON')return;run++;add('me',q);await bot(answers[q]);
+  if(q==='Нужны полотенца')addReq('Полотенца в номер')};
+$('#hbTry').onclick=()=>setTimeout(()=>$('.hb-quick button').focus(),600);
+setTimeout(()=>play('Telegram'),1500);
+
+/* ===== ЗАЯВКИ ===== */
+const states=[['new','Новая'],['work','В работе'],['done','Готово']];
+const reqs=[{n:1041,t:'Уборка номера',s:0},{n:1042,t:'Мелкий ремонт',s:1}];let next=1045;
+function render(){$('#hbReqs').innerHTML=reqs.map((r,i)=>`<div class="hb-req"><b>№${r.n}</b><span>${r.t}</span><button class="hb-st" data-i="${i}" data-s="${states[r.s][0]}">${states[r.s][1]}</button></div>`).join('');
+  $('#hbCount').textContent=reqs.length+' шт.'}
+function addReq(t){reqs.unshift({n:next++,t,s:0});render()}
+$('#hbReqs').onclick=e=>{const b=e.target.closest('.hb-st');if(!b)return;const r=reqs[b.dataset.i];r.s=(r.s+1)%3;render()};
+$('#hbAdd').onsubmit=e=>{e.preventDefault();const v=$('#hbAddIn').value.trim();if(v){addReq(v);$('#hbAddIn').value=''}};
+render();
+
+/* ===== СКРОЛЛ: появление, счётчики, таймлайн ===== */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target;el.classList.add('is-in');
+  el.querySelectorAll('[data-to]').forEach(c=>count(c));
+  if(el.classList.contains('hb-step')){el.classList.add('is-on');$('#hbFill').style.width=(($$('.hb-step').indexOf(el)+1)*25)+'%'}
+  io.unobserve(el)}),{threshold:.2});
+$$('.hb-rev').forEach(el=>io.observe(el));
+function count(c){const to=+c.dataset.to,t0=performance.now(),dur=1800; // dur — длительность счётчика, мс
+  const tick=t=>{const p=Math.min((t-t0)/dur,1);c.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick)};requestAnimationFrame(tick)}
+
+/* ===== ВАЛИДАЦИЯ ФОРМЫ ===== */
+const f=$('#hbForm');
+f.onsubmit=e=>{e.preventDefault();let ok=true;
+  const chk=(el,bad,msg)=>{const err=el.closest('label')?el.closest('label').nextElementSibling:el.nextElementSibling;
+    el.classList.toggle('is-bad',bad);err.textContent=bad?msg:'';if(bad)ok=false};
+  const v=n=>f.elements[n].value.trim();
+  chk(f.name,v('name').length<2,'Введите имя');
+  chk(f.hotel,v('hotel').length<2,'Укажите отель');
+  chk(f.contact,!(/^\S+@\S+\.\S+$/.test(v('contact'))||/^\+?[\d\s()-]{10,}$/.test(v('contact'))),'Введите телефон или email');
+  chk(f.agree,!f.agree.checked,'Нужно согласие на обработку данных');
+  if(ok){f.style.display='none';$('#hbThanks').style.display='block'} /* здесь можно подключить отправку на сервер (fetch) */
+};
+})();
+</script>
+</body>
+</html>
